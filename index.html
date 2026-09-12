@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gourmet Bistro - Digital Menu & Admin CMS</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- QRCode.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                            700: '#a16207',
+                            800: '#854d0e',
+                            900: '#713f12',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-header {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .dark .glass-header {
+            background: rgba(24, 24, 27, 0.90);
+        }
+    </style>
+</head>
+<body class="bg-stone-50 dark:bg-stone-900 text-stone-800 dark:text-stone-100 min-h-screen transition-colors duration-200">
+
+    <!-- MAIN APPLICATION HEADER -->
+    <header class="sticky top-0 z-30 glass-header border-b border-stone-200 dark:border-stone-800">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchToCustomerView()">
+                <div id="header-logo-container" class="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center font-serif font-bold text-xl shadow-md overflow-hidden">
+                    <span id="header-logo-text">G</span>
+                </div>
+                <div>
+                    <h1 class="font-serif font-bold text-lg text-stone-900 dark:text-stone-100 leading-tight" id="header-rest-name">Gourmet Bistro</h1>
+                    <span class="text-xs text-brand-600 dark:text-brand-500 font-medium" id="header-subtitle">Table #04 • Digital Menu</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <!-- Admin Mode Toggle Button -->
+                <button onclick="promptAdminPin()" id="admin-mode-btn" class="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 text-xs font-semibold hover:bg-stone-100 dark:hover:bg-stone-700 transition flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-lock text-brand-600 dark:text-brand-500"></i>
+                    <span id="admin-btn-text">Admin CMS</span>
+                </button>
+
+                <!-- Customer Language Dropdown -->
+                <div class="relative" id="customer-lang-container">
+                    <button onclick="toggleLangDropdown()" id="current-lang-btn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-semibold bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 shadow-sm">
+                        <span id="lang-flag">🇬🇧</span>
+                        <span id="lang-code" class="uppercase">EN</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-stone-400"></i>
+                    </button>
+
+                    <div id="lang-dropdown" class="hidden absolute right-0 mt-2 w-36 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl shadow-xl py-1 z-40 text-xs font-medium">
+                        <button onclick="selectLanguage('en')" class="w-full px-4 py-2 text-left flex items-center hover:bg-brand-50 dark:hover:bg-stone-700">
+                            <span class="mr-2 text-base">🇬🇧</span> English
+                        </button>
+                        <button onclick="selectLanguage('es')" class="w-full px-4 py-2 text-left flex items-center hover:bg-brand-50 dark:hover:bg-stone-700">
+                            <span class="mr-2 text-base">🇪🇸</span> Español
+                        </button>
+                        <button onclick="selectLanguage('fr')" class="w-full px-4 py-2 text-left flex items-center hover:bg-brand-50 dark:hover:bg-stone-700">
+                            <span class="mr-2 text-base">🇫🇷</span> Français
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button onclick="toggleDarkMode()" class="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition">
+                    <i class="fa-solid fa-moon" id="theme-icon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CUSTOMER VIEW SECTION -->
+    <div id="customer-view" class="pb-28">
+        
+        <!-- Welcome Language Modal (Shown on first scan) -->
+        <div id="welcome-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md transition-opacity duration-300">
+            <div class="bg-white dark:bg-stone-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center border border-stone-100 dark:border-stone-700">
+                <div class="w-14 h-14 bg-brand-100 dark:bg-brand-900/40 rounded-2xl flex items-center justify-center mx-auto mb-4 text-brand-600 dark:text-brand-500 text-2xl">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <h2 class="font-serif text-2xl font-bold text-stone-900 dark:text-stone-50 mb-1" id="modal-rest-name">Gourmet Bistro</h2>
+                <p class="text-xs text-brand-600 dark:text-brand-500 font-semibold uppercase tracking-widest mb-4">Digital Menu</p>
+                <p class="text-stone-600 dark:text-stone-300 text-xs mb-5">Please choose your language to view the menu:</p>
+                
+                <div class="space-y-2 mb-4">
+                    <button onclick="selectLanguage('en')" class="w-full flex items-center justify-between p-3 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition text-sm font-medium">
+                        <span>🇬🇧 English</span>
+                        <i class="fa-solid fa-chevron-right text-xs text-stone-400"></i>
+                    </button>
+                    <button onclick="selectLanguage('es')" class="w-full flex items-center justify-between p-3 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition text-sm font-medium">
+                        <span>🇪🇸 Español</span>
+                        <i class="fa-solid fa-chevron-right text-xs text-stone-400"></i>
+                    </button>
+                    <button onclick="selectLanguage('fr')" class="w-full flex items-center justify-between p-3 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition text-sm font-medium">
+                        <span>🇫🇷 Français</span>
+                        <i class="fa-solid fa-chevron-right text-xs text-stone-400"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HERO BANNER -->
+        <div class="max-w-4xl mx-auto px-4 pt-6">
+            <div class="relative rounded-3xl overflow-hidden h-40 sm:h-48 bg-stone-900 text-white shadow-xl">
+                <img id="hero-banner-img" src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1000&q=80" alt="Banner" class="absolute inset-0 w-full h-full object-cover opacity-40">
+                <div class="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/30 to-transparent flex flex-col justify-end p-6">
+                    <span class="text-brand-400 font-semibold text-xs tracking-widest uppercase mb-1" id="ui-hero-welcome">WELCOME TO</span>
+                    <h2 class="font-serif text-2xl sm:text-3xl font-bold mb-1" id="hero-rest-name">Gourmet Bistro</h2>
+                    <p class="text-xs sm:text-sm text-stone-300 max-w-lg" id="ui-hero-subtitle">Fresh local ingredients prepared by world-class chefs.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEARCH & DIETARY FILTERS -->
+        <main class="max-w-4xl mx-auto px-4 mt-6">
+            <div class="mb-5 space-y-3">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 text-sm"></i>
+                    <input type="text" id="search-input" onkeyup="renderCustomerMenu()" placeholder="Search menu items..." class="w-full pl-11 pr-4 py-3 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm shadow-sm transition">
+                </div>
+
+                <!-- Dietary Badges Filter -->
+                <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1 text-xs">
+                    <button onclick="toggleDietaryFilter('vegan')" id="filter-btn-vegan" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 shrink-0">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span id="ui-filter-vegan">Vegan</span>
+                    </button>
+                    <button onclick="toggleDietaryFilter('vegetarian')" id="filter-btn-vegetarian" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 shrink-0">
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span id="ui-filter-vegetarian">Vegetarian</span>
+                    </button>
+                    <button onclick="toggleDietaryFilter('glutenFree')" id="filter-btn-glutenFree" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 shrink-0">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span id="ui-filter-glutenFree">Gluten-Free</span>
+                    </button>
+                    <button onclick="toggleDietaryFilter('spicy')" id="filter-btn-spicy" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 shrink-0">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span id="ui-filter-spicy">Spicy</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CATEGORY TABS -->
+            <div class="sticky top-[61px] z-20 py-2 bg-stone-50 dark:bg-stone-900">
+                <div class="flex space-x-2 overflow-x-auto no-scrollbar pb-1" id="category-tabs">
+                    <!-- Dynamic Category Tabs -->
+                </div>
+            </div>
+
+            <!-- MENU ITEMS GRID -->
+            <div class="mt-4">
+                <h3 id="current-category-title" class="font-serif text-xl font-bold text-stone-900 dark:text-stone-100 mb-4"></h3>
+                <div id="customer-menu-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamic Menu Cards -->
+                </div>
+                <div id="customer-empty-state" class="hidden text-center py-12">
+                    <i class="fa-solid fa-utensils text-3xl text-stone-300 dark:text-stone-600 mb-2"></i>
+                    <p class="text-sm text-stone-500 dark:text-stone-400">No dishes found matching your criteria.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- FLOATING BASKET BAR -->
+        <div id="order-bar" class="fixed bottom-4 left-4 right-4 max-w-4xl mx-auto z-30 transition-all duration-300 transform translate-y-28">
+            <div class="bg-stone-900 text-white rounded-2xl shadow-2xl p-4 border border-stone-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-basket-shopping"></i>
+                        </div>
+                        <span id="order-count-badge" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-stone-900">0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-stone-400 block" id="ui-table-order">Table Order Draft</span>
+                        <span id="order-total-price" class="text-sm font-bold text-brand-400">€0.00</span>
+                    </div>
+                </div>
+
+                <button onclick="openOrderModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs rounded-xl transition flex items-center space-x-2">
+                    <span id="ui-view-order">View Order</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN CMS DASHBOARD SECTION -->
+    <div id="admin-view" class="hidden max-w-6xl mx-auto px-4 py-6">
+        
+        <!-- CMS Header Banner -->
+        <div class="bg-stone-900 text-white rounded-3xl p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between shadow-xl gap-4">
+            <div>
+                <span class="bg-brand-500/20 text-brand-400 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">Restaurant CMS Dashboard</span>
+                <h2 class="font-serif text-2xl font-bold mt-2">Menu & Branding Management</h2>
+                <p class="text-xs text-stone-400 mt-1">Changes are automatically saved to local browser storage and reflected on QR code scans.</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="exportMenuDataJSON()" class="px-3.5 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl text-xs font-semibold border border-stone-700 transition flex items-center space-x-2">
+                    <i class="fa-solid fa-download text-brand-400"></i>
+                    <span>Export JSON</span>
+                </button>
+                <label class="px-3.5 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl text-xs font-semibold border border-stone-700 cursor-pointer transition flex items-center space-x-2">
+                    <i class="fa-solid fa-upload text-brand-400"></i>
+                    <span>Import JSON</span>
+                    <input type="file" id="import-json-input" accept=".json" onchange="importMenuDataJSON(event)" class="hidden">
+                </label>
+                <button onclick="openQRModal()" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold transition flex items-center space-x-2">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>Get QR Code</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- CMS TABS NAVIGATION -->
+        <div class="flex border-b border-stone-200 dark:border-stone-800 mb-6 gap-4">
+            <button onclick="setAdminTab('items')" id="adm-tab-items" class="pb-3 border-b-2 border-brand-600 text-brand-600 font-semibold text-sm flex items-center space-x-2">
+                <i class="fa-solid fa-utensils"></i>
+                <span>Dishes & Items</span>
+            </button>
+            <button onclick="setAdminTab('categories')" id="adm-tab-categories" class="pb-3 border-b-2 border-transparent text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 font-semibold text-sm flex items-center space-x-2">
+                <i class="fa-solid fa-list"></i>
+                <span>Categories</span>
+            </button>
+            <button onclick="setAdminTab('branding')" id="adm-tab-branding" class="pb-3 border-b-2 border-transparent text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 font-semibold text-sm flex items-center space-x-2">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Branding & Settings</span>
+            </button>
+        </div>
+
+        <!-- ADMIN TAB 1: MENU ITEMS MANAGEMENT -->
+        <div id="admin-sec-items" class="space-y-6">
+            <div class="flex items-center justify-between">
+                <h3 class="font-serif text-xl font-bold">All Menu Items</h3>
+                <button onclick="openDishEditorModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold transition flex items-center space-x-2 shadow-md">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add New Dish</span>
+                </button>
+            </div>
+
+            <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-stone-100 dark:bg-stone-700/50 text-stone-600 dark:text-stone-300 text-xs font-semibold uppercase tracking-wider border-b border-stone-200 dark:border-stone-700">
+                                <th class="p-4">Dish</th>
+                                <th class="p-4">Category</th>
+                                <th class="p-4">Price</th>
+                                <th class="p-4">Dietary</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-dishes-table-body" class="divide-y divide-stone-100 dark:divide-stone-700 text-xs">
+                            <!-- Dynamic Table Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN TAB 2: CATEGORIES MANAGEMENT -->
+        <div id="admin-sec-categories" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <h3 class="font-serif text-xl font-bold">Menu Categories</h3>
+                <button onclick="openCategoryModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold transition flex items-center space-x-2 shadow-md">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add Category</span>
+                </button>
+            </div>
+
+            <div id="admin-categories-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <!-- Dynamic Category Cards -->
+            </div>
+        </div>
+
+        <!-- ADMIN TAB 3: BRANDING & SETTINGS -->
+        <div id="admin-sec-branding" class="hidden space-y-6 max-w-2xl">
+            <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl p-6 space-y-4 shadow-sm">
+                <h3 class="font-serif text-lg font-bold border-b border-stone-100 dark:border-stone-700 pb-3">Restaurant Information</h3>
+                
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-stone-600 dark:text-stone-300">Restaurant Name</label>
+                    <input type="text" id="cfg-rest-name" class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-stone-600 dark:text-stone-300">Table / Subtitle Label</label>
+                    <input type="text" id="cfg-subtitle" class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-stone-600 dark:text-stone-300">Hero Banner Photo</label>
+                    <div class="flex items-center space-x-3">
+                        <input type="text" id="cfg-banner-url" placeholder="Image URL..." class="flex-1 px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                        <label class="px-3 py-2 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 rounded-xl text-xs font-medium cursor-pointer transition">
+                            Upload File
+                            <input type="file" accept="image/*" onchange="uploadImageFile(event, 'cfg-banner-url')" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-stone-600 dark:text-stone-300">Admin Security PIN</label>
+                    <input type="password" id="cfg-admin-pin" value="1234" class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                </div>
+
+                <div class="pt-3">
+                    <button onclick="saveBrandingSettings()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold transition shadow-md">
+                        Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT DISH MODAL -->
+    <div id="dish-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white dark:bg-stone-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-stone-100 dark:border-stone-700 my-8">
+            <div class="flex justify-between items-center mb-4 border-b border-stone-100 dark:border-stone-700 pb-3">
+                <h3 class="font-serif text-xl font-bold" id="dish-modal-title">Edit Dish</h3>
+                <button onclick="closeDishModal()" class="text-stone-400 hover:text-stone-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form id="dish-form" onsubmit="saveDishForm(event)" class="space-y-4">
+                <input type="hidden" id="edit-dish-id">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Category</label>
+                        <select id="edit-dish-cat" required class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Price (€)</label>
+                        <input type="number" step="0.01" id="edit-dish-price" required class="w-full px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                    </div>
+                </div>
+
+                <!-- PHOTO UPLOADER / URL INPUT -->
+                <div>
+                    <label class="block text-xs font-semibold mb-1">Dish Photo</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="edit-dish-img" placeholder="https://..." required class="flex-1 px-3 py-2 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                        <label class="px-3 py-2 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 rounded-xl text-xs font-semibold cursor-pointer transition">
+                            <i class="fa-solid fa-upload mr-1"></i> Upload
+                            <input type="file" accept="image/*" onchange="uploadImageFile(event, 'edit-dish-img', 'dish-img-preview')" class="hidden">
+                        </label>
+                    </div>
+                    <div class="mt-2 h-24 w-full rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700">
+                        <img id="dish-img-preview" src="" alt="Preview" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <!-- MULTILINGUAL DISH NAMES & DESCRIPTIONS -->
+                <div class="space-y-3 bg-stone-50 dark:bg-stone-900/50 p-4 rounded-2xl border border-stone-200 dark:border-stone-700">
+                    <span class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-500">Translations (Required)</span>
+                    
+                    <div>
+                        <label class="block text-[11px] font-semibold text-stone-500 mb-0.5">🇬🇧 Name & Description (English)</label>
+                        <input type="text" id="edit-name-en" placeholder="Dish Name (EN)" required class="w-full px-3 py-1.5 mb-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-xs">
+                        <textarea id="edit-desc-en" placeholder="Description (EN)" rows="2" required class="w-full px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-xs"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-stone-500 mb-0.5">🇪🇸 Nombre y Descripción (Spanish)</label>
+                        <input type="text" id="edit-name-es" placeholder="Nombre (ES)" required class="w-full px-3 py-1.5 mb-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-xs">
+                        <textarea id="edit-desc-es" placeholder="Descripción (ES)" rows="2" required class="w-full px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-xs"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-stone-500 mb-0.5">🇫🇷 Nom et Description (French)</label>
+                        <input type="text" id="edit-name-fr" placeholder="Nom (FR)" required class="w-full px-3 py-1.5 mb-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-xs">
+                        <textarea id="edit-desc-fr" placeholder="Description (FR)" rows="2" required class="w-full px-3 py-1.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-xs"></textarea>
+                    </div>
+                </div>
+
+                <!-- DIETARY TOGGLES & STOCK STATUS -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="edit-diet-vegan"> <span>Vegan</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="edit-diet-veg"> <span>Vegetarian</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="edit-diet-gf"> <span>Gluten-Free</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" id="edit-diet-spicy"> <span>Spicy</span></label>
+                    <label class="flex items-center space-x-2 col-span-2 pt-2 border-t border-stone-200 dark:border-stone-700">
+                        <input type="checkbox" id="edit-available" checked> <span>In Stock & Available</span>
+                    </label>
+                </div>
+
+                <div class="pt-3">
+                    <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow-md">Save Dish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CATEGORY MODAL -->
+    <div id="category-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-stone-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-100 dark:border-stone-700">
+            <h3 class="font-serif text-lg font-bold mb-3" id="cat-modal-title">Add Category</h3>
+            <form onsubmit="saveCategoryForm(event)" class="space-y-3">
+                <input type="hidden" id="edit-cat-key">
+                <div>
+                    <label class="block text-xs font-semibold mb-1">Category Key ID (e.g., mains)</label>
+                    <input type="text" id="edit-cat-id" required class="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1">🇬🇧 Name (English)</label>
+                    <input type="text" id="edit-cat-en" required class="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1">🇪🇸 Name (Spanish)</label>
+                    <input type="text" id="edit-cat-es" required class="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1">🇫🇷 Name (French)</label>
+                    <input type="text" id="edit-cat-fr" required class="w-full px-3 py-1.5 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl text-xs">
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeCategoryModal()" class="flex-1 py-2 bg-stone-200 dark:bg-stone-700 rounded-xl text-xs font-semibold">Cancel</button>
+                    <button type="submit" class="flex-1 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOMER ITEM DETAIL MODAL -->
+    <div id="item-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-stone-800 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-stone-100 dark:border-stone-700">
+            <div class="relative h-52">
+                <img id="modal-img" src="" alt="" class="w-full h-full object-cover">
+                <button onclick="closeItemModal()" class="absolute top-4 right-4 w-8 h-8 bg-stone-950/60 text-white rounded-full flex items-center justify-center backdrop-blur-md">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <div class="flex items-start justify-between mb-2">
+                    <h3 id="modal-title" class="font-serif text-xl font-bold text-stone-900 dark:text-stone-100"></h3>
+                    <span id="modal-price" class="font-bold text-brand-600 dark:text-brand-500 text-lg"></span>
+                </div>
+                <div id="modal-dietary" class="flex flex-wrap gap-1.5 mb-3"></div>
+                <p id="modal-desc" class="text-stone-600 dark:text-stone-300 text-xs leading-relaxed mb-5"></p>
+                
+                <button id="modal-add-btn" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs rounded-xl transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add to Order</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOMER ORDER DRAFT MODAL -->
+    <div id="order-modal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-950/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-stone-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[85vh] flex flex-col shadow-2xl border border-stone-100 dark:border-stone-700">
+            <div class="p-4 border-b border-stone-200 dark:border-stone-700 flex items-center justify-between">
+                <div>
+                    <h3 class="font-serif font-bold text-lg">Table Order Draft</h3>
+                    <p class="text-[11px] text-stone-500">Show this list to your server when ready</p>
+                </div>
+                <button onclick="closeOrderModal()" class="text-stone-400 hover:text-stone-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div id="order-items-list" class="p-4 overflow-y-auto flex-1 divide-y divide-stone-100 dark:divide-stone-700"></div>
+
+            <div class="p-4 bg-stone-50 dark:bg-stone-800/80 border-t border-stone-200 dark:border-stone-700 space-y-3">
+                <div class="flex justify-between text-sm font-bold">
+                    <span>Total Amount:</span>
+                    <span id="modal-order-total" class="text-brand-600 dark:text-brand-500">€0.00</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="clearOrder()" class="py-2.5 border border-stone-300 dark:border-stone-600 rounded-xl text-xs font-semibold">Clear List</button>
+                    <button onclick="confirmOrderWithWaiter()" class="py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold">Call Waiter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OWNER QR CODE MODAL -->
+    <div id="qr-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm">
+        <div class="bg-white dark:bg-stone-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-stone-100 dark:border-stone-700">
+            <h3 class="font-serif text-lg font-bold mb-1">Restaurant QR Code</h3>
+            <p class="text-xs text-stone-500 mb-4">Scan with phone camera to view live menu</p>
+            
+            <div class="bg-white p-4 rounded-2xl inline-block shadow-inner border border-stone-200 mb-4" id="qrcode-container"></div>
+            
+            <div class="flex space-x-2">
+                <button onclick="window.print()" class="flex-1 py-2 bg-stone-100 dark:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-xl text-xs font-semibold">Print</button>
+                <button onclick="closeQRModal()" class="flex-1 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 hidden bg-stone-900 text-white px-4 py-2 rounded-full text-xs shadow-xl flex items-center space-x-2 border border-stone-700">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-message">Action successful</span>
+    </div>
+
+    <script>
+        // DEFAULT INITIAL DATA SEED
+        const DEFAULT_CATEGORIES = [
+            { key: "appetizers", name: { en: "Appetizers", es: "Entrantes", fr: "Entrées" } },
+            { key: "mains", name: { en: "Main Courses", es: "Platos Principales", fr: "Plats Principaux" } },
+            { key: "desserts", name: { en: "Desserts", es: "Postres", fr: "Desserts" } },
+            { key: "drinks", name: { en: "Drinks", es: "Bebidas", fr: "Boissons" } }
+        ];
+
+        const DEFAULT_ITEMS = [
+            {
+                id: "item-1",
+                category: "appetizers",
+                price: 14.50,
+                available: true,
+                image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
+                dietary: { vegan: false, vegetarian: true, glutenFree: true, spicy: false },
+                name: { en: "Burrata Caprese", es: "Burrata Caprese", fr: "Burrata Caprese" },
+                desc: {
+                    en: "Creamy burrata with heirloom tomatoes, basil pesto, and balsamic glaze.",
+                    es: "Burrata cremosa con tomates frescos, pesto de albahaca y reducción balsámica.",
+                    fr: "Burrata crémeuse aux tomates, pesto de basilic et glaçage balsamique."
+                }
+            },
+            {
+                id: "item-2",
+                category: "mains",
+                price: 24.00,
+                available: true,
+                image: "https://images.unsplash.com/photo-1621996346565-e3d5d6281316?auto=format&fit=crop&w=600&q=80",
+                dietary: { vegan: false, vegetarian: true, glutenFree: false, spicy: false },
+                name: { en: "Truffle Tagliatelle", es: "Tagliatelle al Tartufo", fr: "Tagliatelles à la Truffe" },
+                desc: {
+                    en: "Fresh handmade pasta with black summer truffle cream and parmesan.",
+                    es: "Pasta fresca artesanal con crema de trufa negra y parmesano.",
+                    fr: "Pâtes fraîches artisanales à la crème de truffe noire et parmesan."
+                }
+            }
+        ];
+
+        // GLOBAL APP STATE
+        let appConfig = JSON.parse(localStorage.getItem('bistro_config')) || {
+            restName: "Gourmet Bistro",
+            subtitle: "Table #04 • Digital Menu",
+            bannerUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1000&q=80",
+            adminPin: "1234"
+        };
+
+        let categories = JSON.parse(localStorage.getItem('bistro_categories')) || DEFAULT_CATEGORIES;
+        let menuItems = JSON.parse(localStorage.getItem('bistro_items')) || DEFAULT_ITEMS;
+        let currentLang = localStorage.getItem('bistro_lang') || 'en';
+        let activeCategory = categories[0]?.key || 'appetizers';
+        let selectedDietary = { vegan: false, vegetarian: false, glutenFree: false, spicy: false };
+        let tableOrder = [];
+        let isAdminLoggedIn = false;
+
+        // INITIALIZATION
+        window.onload = function() {
+            renderLanguageUI();
+            renderCustomerCategories();
+            renderCustomerMenu();
+            applyBranding();
+            initQRCode();
+
+            if (!localStorage.getItem('bistro_lang')) {
+                document.getElementById('welcome-modal').classList.remove('hidden');
+            } else {
+                document.getElementById('welcome-modal').classList.add('hidden');
+            }
+        };
+
+        // LOCALSTORAGE PERSISTENCE
+        function persistData() {
+            localStorage.setItem('bistro_config', JSON.stringify(appConfig));
+            localStorage.setItem('bistro_categories', JSON.stringify(categories));
+            localStorage.setItem('bistro_items', JSON.stringify(menuItems));
+        }
+
+        // BRANDING APPLY
+        function applyBranding() {
+            document.getElementById('header-rest-name').textContent = appConfig.restName;
+            document.getElementById('header-subtitle').textContent = appConfig.subtitle;
+            document.getElementById('modal-rest-name').textContent = appConfig.restName;
+            document.getElementById('hero-rest-name').textContent = appConfig.restName;
+            document.getElementById('header-logo-text').textContent = appConfig.restName.charAt(0);
+            document.getElementById('hero-banner-img').src = appConfig.bannerUrl;
+
+            document.getElementById('cfg-rest-name').value = appConfig.restName;
+            document.getElementById('cfg-subtitle').value = appConfig.subtitle;
+            document.getElementById('cfg-banner-url').value = appConfig.bannerUrl;
+            document.getElementById('cfg-admin-pin').value = appConfig.adminPin;
+        }
+
+        // IMAGE FILE UPLOAD HELPER (Converts image to Base64 for LocalStorage)
+        function uploadImageFile(event, targetInputId, previewImgId = null) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Url = e.target.result;
+                    document.getElementById(targetInputId).value = base64Url;
+                    if (previewImgId) {
+                        document.getElementById(previewImgId).src = base64Url;
+                    }
+                    showToast("Image uploaded successfully");
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // LANGUAGE CONTROLS
+        function selectLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('bistro_lang', lang);
+            document.getElementById('welcome-modal').classList.add('hidden');
+            document.getElementById('lang-dropdown').classList.add('hidden');
+            renderLanguageUI();
+            renderCustomerCategories();
+            renderCustomerMenu();
+        }
+
+        function toggleLangDropdown() {
+            document.getElementById('lang-dropdown').classList.toggle('hidden');
+        }
+
+        function renderLanguageUI() {
+            const flags = { en: '🇬🇧', es: '🇪🇸', fr: '🇫🇷' };
+            document.getElementById('lang-flag').textContent = flags[currentLang];
+            document.getElementById('lang-code').textContent = currentLang;
+        }
+
+        // CUSTOMER MENU RENDERING
+        function renderCustomerCategories() {
+            const container = document.getElementById('category-tabs');
+            container.innerHTML = categories.map(cat => {
+                const isActive = activeCategory === cat.key;
+                const activeClasses = isActive 
+                    ? 'bg-brand-600 text-white shadow-md' 
+                    : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100';
+
+                const catName = cat.name[currentLang] || cat.name.en;
+                return `
+                    <button onclick="setCategory('${cat.key}')" class="px-4 py-2 rounded-2xl text-xs font-semibold shrink-0 transition ${activeClasses}">
+                        ${catName}
+                    </button>
+                `;
+            }).join('');
+
+            const currentCatObj = categories.find(c => c.key === activeCategory);
+            document.getElementById('current-category-title').textContent = currentCatObj ? (currentCatObj.name[currentLang] || currentCatObj.name.en) : '';
+        }
+
+        function setCategory(key) {
+            activeCategory = key;
+            renderCustomerCategories();
+            renderCustomerMenu();
+        }
+
+        function toggleDietaryFilter(type) {
+            selectedDietary[type] = !selectedDietary[type];
+            const btn = document.getElementById(`filter-btn-${type}`);
+            btn.classList.toggle('bg-brand-100');
+            btn.classList.toggle('border-brand-500');
+            renderCustomerMenu();
+        }
+
+        function renderCustomerMenu() {
+            const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
+            const grid = document.getElementById('customer-menu-grid');
+            const emptyState = document.getElementById('customer-empty-state');
+
+            const filteredItems = menuItems.filter(item => {
+                if (!searchVal && item.category !== activeCategory) return false;
+                if (searchVal) {
+                    const name = (item.name[currentLang] || item.name.en).toLowerCase();
+                    const desc = (item.desc[currentLang] || item.desc.en).toLowerCase();
+                    if (!name.includes(searchVal) && !desc.includes(searchVal)) return false;
+                }
+                if (selectedDietary.vegan && !item.dietary.vegan) return false;
+                if (selectedDietary.vegetarian && !item.dietary.vegetarian) return false;
+                if (selectedDietary.glutenFree && !item.dietary.glutenFree) return false;
+                if (selectedDietary.spicy && !item.dietary.spicy) return false;
+                return true;
+            });
+
+            if (filteredItems.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            grid.innerHTML = filteredItems.map(item => {
+                const title = item.name[currentLang] || item.name.en;
+                const desc = item.desc[currentLang] || item.desc.en;
+
+                let badges = '';
+                if (item.dietary.vegan) badges += `<span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-700 font-semibold">Vegan</span>`;
+                if (item.dietary.vegetarian) badges += `<span class="px-2 py-0.5 rounded-full text-[10px] bg-green-100 text-green-700 font-semibold">Vegetarian</span>`;
+                if (item.dietary.glutenFree) badges += `<span class="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-700 font-semibold">Gluten-Free</span>`;
+                if (item.dietary.spicy) badges += `<span class="px-2 py-0.5 rounded-full text-[10px] bg-red-100 text-red-700 font-semibold">Spicy</span>`;
+
+                const isOutOfStock = !item.available;
+
+                return `
+                    <div class="bg-white dark:bg-stone-800 rounded-2xl p-4 border border-stone-200 dark:border-stone-700 shadow-sm flex flex-col justify-between ${isOutOfStock ? 'opacity-60' : ''}">
+                        <div onclick="openItemModal('${item.id}')" class="cursor-pointer">
+                            <div class="relative h-40 rounded-xl overflow-hidden mb-3 bg-stone-100 dark:bg-stone-900">
+                                <img src="${item.image}" alt="${title}" class="w-full h-full object-cover">
+                                <span class="absolute top-2 right-2 bg-stone-900/80 text-brand-400 px-2.5 py-1 rounded-xl font-bold text-xs">
+                                    €${item.price.toFixed(2)}
+                                </span>
+                                ${isOutOfStock ? '<span class="absolute inset-0 bg-stone-950/70 text-white font-bold flex items-center justify-center text-xs uppercase">Out of Stock</span>' : ''}
+                            </div>
+                            <div class="flex flex-wrap gap-1 mb-1.5">${badges}</div>
+                            <h4 class="font-serif font-bold text-base text-stone-900 dark:text-stone-100">${title}</h4>
+                            <p class="text-xs text-stone-500 dark:text-stone-400 line-clamp-2 leading-relaxed mb-3">${desc}</p>
+                        </div>
+                        <div class="pt-2 border-t border-stone-100 dark:border-stone-700/60 flex items-center justify-between">
+                            <span class="text-xs font-bold text-brand-600 dark:text-brand-500">€${item.price.toFixed(2)}</span>
+                            <button onclick="addToOrder('${item.id}')" ${isOutOfStock ? 'disabled' : ''} class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:bg-stone-400 text-white text-xs font-semibold rounded-xl transition flex items-center space-x-1">
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                                <span>Add</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ADMIN CMS PIN SECURITY & SWITCHING
+        function promptAdminPin() {
+            if (isAdminLoggedIn) {
+                switchToCustomerView();
+                return;
+            }
+            const enteredPin = prompt("Enter Admin CMS Security PIN (Default: 1234):");
+            if (enteredPin === appConfig.adminPin) {
+                isAdminLoggedIn = true;
+                switchToAdminView();
+                showToast("Admin Mode Activated");
+            } else if (enteredPin !== null) {
+                alert("Incorrect PIN Code!");
+            }
+        }
+
+        function switchToAdminView() {
+            document.getElementById('customer-view').classList.add('hidden');
+            document.getElementById('customer-lang-container').classList.add('hidden');
+            document.getElementById('admin-view').classList.remove('hidden');
+            document.getElementById('admin-btn-text').textContent = "Exit Admin";
+            renderAdminDishesTable();
+            renderAdminCategories();
+        }
+
+        function switchToCustomerView() {
+            isAdminLoggedIn = false;
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('customer-lang-container').classList.remove('hidden');
+            document.getElementById('customer-view').classList.remove('hidden');
+            document.getElementById('admin-btn-text').textContent = "Admin CMS";
+            renderCustomerCategories();
+            renderCustomerMenu();
+        }
+
+        function setAdminTab(tabName) {
+            ['items', 'categories', 'branding'].forEach(t => {
+                document.getElementById(`admin-sec-${t}`).classList.add('hidden');
+                document.getElementById(`adm-tab-${t}`).className = "pb-3 border-b-2 border-transparent text-stone-500 font-semibold text-sm flex items-center space-x-2";
+            });
+            document.getElementById(`admin-sec-${tabName}`).classList.remove('hidden');
+            document.getElementById(`adm-tab-${tabName}`).className = "pb-3 border-b-2 border-brand-600 text-brand-600 font-semibold text-sm flex items-center space-x-2";
+        }
+
+        // ADMIN DISH TABLE MANAGEMENT
+        function renderAdminDishesTable() {
+            const tbody = document.getElementById('admin-dishes-table-body');
+            tbody.innerHTML = menuItems.map(item => {
+                const catObj = categories.find(c => c.key === item.category);
+                const catName = catObj ? catObj.name.en : item.category;
+
+                return `
+                    <tr class="hover:bg-stone-50 dark:hover:bg-stone-700/30">
+                        <td class="p-4 flex items-center space-x-3">
+                            <img src="${item.image}" class="w-10 h-10 rounded-xl object-cover">
+                            <div>
+                                <span class="font-bold block text-stone-900 dark:text-stone-100">${item.name.en}</span>
+                                <span class="text-[11px] text-stone-400">${item.name.es}</span>
+                            </div>
+                        </td>
+                        <td class="p-4 font-medium">${catName}</td>
+                        <td class="p-4 font-bold text-brand-600 dark:text-brand-500">€${item.price.toFixed(2)}</td>
+                        <td class="p-4">
+                            ${item.dietary.vegan ? '<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] mr-1">V</span>' : ''}
+                            ${item.dietary.glutenFree ? '<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px]">GF</span>' : ''}
+                        </td>
+                        <td class="p-4">
+                            <button onclick="toggleDishStock('${item.id}')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${item.available ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+                                ${item.available ? 'In Stock' : 'Out of Stock'}
+                            </button>
+                        </td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="openDishEditorModal('${item.id}')" class="p-2 text-stone-500 hover:text-brand-600"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteDish('${item.id}')" class="p-2 text-stone-500 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function toggleDishStock(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (item) {
+                item.available = !item.available;
+                persistData();
+                renderAdminDishesTable();
+                showToast("Stock status updated");
+            }
+        }
+
+        function deleteDish(id) {
+            if (confirm("Are you sure you want to delete this dish?")) {
+                menuItems = menuItems.filter(i => i.id !== id);
+                persistData();
+                renderAdminDishesTable();
+                showToast("Dish deleted");
+            }
+        }
+
+        function openDishEditorModal(id = null) {
+            const catSelect = document.getElementById('edit-dish-cat');
+            catSelect.innerHTML = categories.map(c => `<option value="${c.key}">${c.name.en}</option>`).join('');
+
+            if (id) {
+                const item = menuItems.find(i => i.id === id);
+                document.getElementById('dish-modal-title').textContent = "Edit Dish";
+                document.getElementById('edit-dish-id').value = item.id;
+                document.getElementById('edit-dish-cat').value = item.category;
+                document.getElementById('edit-dish-price').value = item.price;
+                document.getElementById('edit-dish-img').value = item.image;
+                document.getElementById('dish-img-preview').src = item.image;
+
+                document.getElementById('edit-name-en').value = item.name.en || '';
+                document.getElementById('edit-desc-en').value = item.desc.en || '';
+                document.getElementById('edit-name-es').value = item.name.es || '';
+                document.getElementById('edit-desc-es').value = item.desc.es || '';
+                document.getElementById('edit-name-fr').value = item.name.fr || '';
+                document.getElementById('edit-desc-fr').value = item.desc.fr || '';
+
+                document.getElementById('edit-diet-vegan').checked = item.dietary.vegan;
+                document.getElementById('edit-diet-veg').checked = item.dietary.vegetarian;
+                document.getElementById('edit-diet-gf').checked = item.dietary.glutenFree;
+                document.getElementById('edit-diet-spicy').checked = item.dietary.spicy;
+                document.getElementById('edit-available').checked = item.available;
+            } else {
+                document.getElementById('dish-modal-title').textContent = "Add New Dish";
+                document.getElementById('dish-form').reset();
+                document.getElementById('edit-dish-id').value = "";
+                document.getElementById('dish-img-preview').src = "";
+            }
+
+            document.getElementById('dish-modal').classList.remove('hidden');
+        }
+
+        function closeDishModal() {
+            document.getElementById('dish-modal').classList.add('hidden');
+        }
+
+        function saveDishForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-dish-id').value || `item-${Date.now()}`;
+            const dishData = {
+                id: id,
+                category: document.getElementById('edit-dish-cat').value,
+                price: parseFloat(document.getElementById('edit-dish-price').value),
+                image: document.getElementById('edit-dish-img').value,
+                available: document.getElementById('edit-available').checked,
+                dietary: {
+                    vegan: document.getElementById('edit-diet-vegan').checked,
+                    vegetarian: document.getElementById('edit-diet-veg').checked,
+                    glutenFree: document.getElementById('edit-diet-gf').checked,
+                    spicy: document.getElementById('edit-diet-spicy').checked
+                },
+                name: {
+                    en: document.getElementById('edit-name-en').value,
+                    es: document.getElementById('edit-name-es').value,
+                    fr: document.getElementById('edit-name-fr').value
+                },
+                desc: {
+                    en: document.getElementById('edit-desc-en').value,
+                    es: document.getElementById('edit-desc-es').value,
+                    fr: document.getElementById('edit-desc-fr').value
+                }
+            };
+
+            const existingIdx = menuItems.findIndex(i => i.id === id);
+            if (existingIdx > -1) {
+                menuItems[existingIdx] = dishData;
+            } else {
+                menuItems.push(dishData);
+            }
+
+            persistData();
+            closeDishModal();
+            renderAdminDishesTable();
+            showToast("Dish saved successfully");
+        }
+
+        // ADMIN CATEGORIES MANAGEMENT
+        function renderAdminCategories() {
+            const list = document.getElementById('admin-categories-list');
+            list.innerHTML = categories.map(cat => `
+                <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+                    <div>
+                        <h4 class="font-serif font-bold text-sm">${cat.name.en}</h4>
+                        <span class="text-[11px] text-stone-400">ID: ${cat.key}</span>
+                    </div>
+                    <div class="space-x-1">
+                        <button onclick="openCategoryModal('${cat.key}')" class="p-1.5 text-stone-500 hover:text-brand-600"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="deleteCategory('${cat.key}')" class="p-1.5 text-stone-500 hover:text-red-600"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openCategoryModal(key = null) {
+            if (key) {
+                const cat = categories.find(c => c.key === key);
+                document.getElementById('cat-modal-title').textContent = "Edit Category";
+                document.getElementById('edit-cat-key').value = cat.key;
+                document.getElementById('edit-cat-id').value = cat.key;
+                document.getElementById('edit-cat-en').value = cat.name.en || '';
+                document.getElementById('edit-cat-es').value = cat.name.es || '';
+                document.getElementById('edit-cat-fr').value = cat.name.fr || '';
+            } else {
+                document.getElementById('cat-modal-title').textContent = "Add Category";
+                document.getElementById('edit-cat-key').value = "";
+                document.getElementById('edit-cat-id').value = "";
+                document.getElementById('edit-cat-en').value = "";
+                document.getElementById('edit-cat-es').value = "";
+                document.getElementById('edit-cat-fr').value = "";
+            }
+            document.getElementById('category-modal').classList.remove('hidden');
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('category-modal').classList.add('hidden');
+        }
+
+        function saveCategoryForm(e) {
+            e.preventDefault();
+            const originalKey = document.getElementById('edit-cat-key').value;
+            const key = document.getElementById('edit-cat-id').value.toLowerCase().replace(/\s+/g, '-');
+            const catData = {
+                key: key,
+                name: {
+                    en: document.getElementById('edit-cat-en').value,
+                    es: document.getElementById('edit-cat-es').value,
+                    fr: document.getElementById('edit-cat-fr').value
+                }
+            };
+
+            if (originalKey) {
+                const idx = categories.findIndex(c => c.key === originalKey);
+                categories[idx] = catData;
+            } else {
+                categories.push(catData);
+            }
+
+            persistData();
+            closeCategoryModal();
+            renderAdminCategories();
+            showToast("Category saved");
+        }
+
+        function deleteCategory(key) {
+            if (confirm("Delete category? Items in this category will remain, but the tab will be removed.")) {
+                categories = categories.filter(c => c.key !== key);
+                persistData();
+                renderAdminCategories();
+                showToast("Category deleted");
+            }
+        }
+
+        // BRANDING SAVE
+        function saveBrandingSettings() {
+            appConfig.restName = document.getElementById('cfg-rest-name').value;
+            appConfig.subtitle = document.getElementById('cfg-subtitle').value;
+            appConfig.bannerUrl = document.getElementById('cfg-banner-url').value;
+            appConfig.adminPin = document.getElementById('cfg-admin-pin').value;
+            persistData();
+            applyBranding();
+            showToast("Branding settings saved");
+        }
+
+        // EXPORT / IMPORT JSON BACKUP
+        function exportMenuDataJSON() {
+            const fullBackup = {
+                config: appConfig,
+                categories: categories,
+                items: menuItems
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullBackup, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `restaurant_menu_backup.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Backup JSON exported");
+        }
+
+        function importMenuDataJSON(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    if (data.config && data.categories && data.items) {
+                        appConfig = data.config;
+                        categories = data.categories;
+                        menuItems = data.items;
+                        persistData();
+                        applyBranding();
+                        renderAdminDishesTable();
+                        renderAdminCategories();
+                        showToast("Data imported successfully!");
+                    } else {
+                        alert("Invalid JSON format!");
+                    }
+                } catch(err) {
+                    alert("Error parsing JSON file!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // CUSTOMER ORDER DRAFT SYSTEM
+        function addToOrder(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (!item || !item.available) return;
+            const existing = tableOrder.find(o => o.item.id === id);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                tableOrder.push({ item, quantity: 1 });
+            }
+            updateOrderUI();
+            showToast("Added to draft order");
+        }
+
+        function updateOrderUI() {
+            const totalItems = tableOrder.reduce((sum, o) => sum + o.quantity, 0);
+            const totalPrice = tableOrder.reduce((sum, o) => sum + (o.item.price * o.quantity), 0);
+            document.getElementById('order-count-badge').textContent = totalItems;
+            document.getElementById('order-total-price').textContent = `€${totalPrice.toFixed(2)}`;
+            document.getElementById('modal-order-total').textContent = `€${totalPrice.toFixed(2)}`;
+
+            const orderBar = document.getElementById('order-bar');
+            if (totalItems > 0) {
+                orderBar.classList.remove('translate-y-28');
+            } else {
+                orderBar.classList.add('translate-y-28');
+            }
+        }
+
+        function openOrderModal() {
+            renderOrderModalItems();
+            document.getElementById('order-modal').classList.remove('hidden');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').classList.add('hidden');
+        }
+
+        function renderOrderModalItems() {
+            const container = document.getElementById('order-items-list');
+            if (tableOrder.length === 0) {
+                container.innerHTML = '<p class="text-xs text-stone-400 text-center py-6">Your order draft is empty.</p>';
+                return;
+            }
+            container.innerHTML = tableOrder.map(o => `
+                <div class="py-3 flex items-center justify-between">
+                    <div>
+                        <h5 class="font-bold text-xs">${o.item.name[currentLang] || o.item.name.en}</h5>
+                        <span class="text-[11px] text-brand-600 font-semibold">€${o.item.price.toFixed(2)} each</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="changeQty('${o.item.id}', -1)" class="w-6 h-6 rounded bg-stone-100 dark:bg-stone-700 font-bold text-xs">-</button>
+                        <span class="text-xs font-bold w-4 text-center">${o.quantity}</span>
+                        <button onclick="changeQty('${o.item.id}', 1)" class="w-6 h-6 rounded bg-stone-100 dark:bg-stone-700 font-bold text-xs">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function changeQty(id, delta) {
+            const idx = tableOrder.findIndex(o => o.item.id === id);
+            if (idx > -1) {
+                tableOrder[idx].quantity += delta;
+                if (tableOrder[idx].quantity <= 0) tableOrder.splice(idx, 1);
+            }
+            updateOrderUI();
+            renderOrderModalItems();
+        }
+
+        function clearOrder() {
+            tableOrder = [];
+            updateOrderUI();
+            closeOrderModal();
+        }
+
+        function confirmOrderWithWaiter() {
+            showToast("Server alerted for Table!");
+            closeOrderModal();
+        }
+
+        // ITEM DETAIL MODAL
+        function openItemModal(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (!item) return;
+            document.getElementById('modal-img').src = item.image;
+            document.getElementById('modal-title').textContent = item.name[currentLang] || item.name.en;
+            document.getElementById('modal-price').textContent = `€${item.price.toFixed(2)}`;
+            document.getElementById('modal-desc').textContent = item.desc[currentLang] || item.desc.en;
+            document.getElementById('modal-add-btn').onclick = function() {
+                addToOrder(item.id);
+                closeItemModal();
+            };
+            document.getElementById('item-modal').classList.remove('hidden');
+        }
+
+        function closeItemModal() {
+            document.getElementById('item-modal').classList.add('hidden');
+        }
+
+        // QR CODE MODAL
+        function initQRCode() {
+            const container = document.getElementById("qrcode-container");
+            container.innerHTML = "";
+            new QRCode(container, {
+                text: window.location.href,
+                width: 150,
+                height: 150,
+                colorDark : "#1c1917",
+                colorLight : "#ffffff"
+            });
+        }
+
+        function openQRModal() {
+            document.getElementById('qr-modal').classList.remove('hidden');
+        }
+
+        function closeQRModal() {
+            document.getElementById('qr-modal').classList.add('hidden');
+        }
+
+        // UTILITIES
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2500);
+        }
+    </script>
+</body>
+</html>
